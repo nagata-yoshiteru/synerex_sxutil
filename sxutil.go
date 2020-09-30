@@ -653,7 +653,7 @@ func (clt *SXServiceClient) SelectDemand(dm *api.Demand) error {
 }
 
 // SubscribeSupply  Wrapper function for SXServiceClient
-func (clt *SXServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SXServiceClient, *api.Supply)) error {
+func (clt *SXServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SXServiceClient, *api.Supply, *RequestVars), rv *RequestVars) error {
 	ch := clt.getChannel()
 	smc, err := clt.SXClient.Client.SubscribeSupply(ctx, ch)
 	if err != nil {
@@ -674,7 +674,7 @@ func (clt *SXServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SXSe
 		//		log.Println("Receive SS:", *sp)
 
 		if !clt.NI.nodeState.Locked {
-			spcb(clt, sp)
+			spcb(clt, sp, rv)
 		} else {
 			log.Println("Provider is locked!")
 		}
@@ -714,7 +714,7 @@ func (clt *SXServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SXSe
 }
 
 // SubscribeMbus  Wrapper function for SXServiceClient
-func (clt *SXServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SXServiceClient, *api.MbusMsg)) error {
+func (clt *SXServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SXServiceClient, *api.MbusMsg, []byte), data []byte) error {
 
 	mb := &api.Mbus{
 		ClientId: uint64(clt.ClientID),
@@ -739,7 +739,7 @@ func (clt *SXServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SXServ
 		}
 		//		log.Printf("Receive Mbus Message %v", *mes)
 		// call Callback!
-		mbcb(clt, mes)
+		mbcb(clt, mes, data)
 	}
 	return err
 }
@@ -925,19 +925,19 @@ func SubscribeDemand(client *SXServiceClient, dmcb func(*SXServiceClient, *api.D
 }
 
 // Simple Continuous (error free) subscriber for demand
-func SimpleSubscribeSupply(client *SXServiceClient, spcb func(*SXServiceClient, *api.Supply)) (*sync.Mutex, *bool) {
+func SimpleSubscribeSupply(client *SXServiceClient, spcb func(*SXServiceClient, *api.Supply, *RequestVars), rv *RequestVars) (*sync.Mutex, *bool) {
 	var mu sync.Mutex
 	loopFlag := true
-	go SubscribeSupply(client, spcb, &mu, &loopFlag) // loop
+	go SubscribeSupply(client, spcb, &mu, &loopFlag, rv) // loop
 	return &mu, &loopFlag
 }
 
 // Continuous (error free) subscriber for demand
-func SubscribeSupply(client *SXServiceClient, spcb func(*SXServiceClient, *api.Supply), mu *sync.Mutex, loopFlag *bool) {
+func SubscribeSupply(client *SXServiceClient, spcb func(*SXServiceClient, *api.Supply, *RequestVars), mu *sync.Mutex, loopFlag *bool, rv *RequestVars) {
 	ctx := context.Background() //
 	var servAddr string = ""
 	for *loopFlag { // make it continuously working..
-		client.SubscribeSupply(ctx, spcb)
+		client.SubscribeSupply(ctx, spcb, rv)
 		log.Printf("Error on subscribe.")
 		if client.SXClient == nil {
 			log.Printf("Already reconnect from other loop.")
