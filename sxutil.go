@@ -714,7 +714,7 @@ func (clt *SXServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SXSe
 }
 
 // SubscribeMbus  Wrapper function for SXServiceClient
-func (clt *SXServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SXServiceClient, *api.MbusMsg, []byte), data []byte) error {
+func (clt *SXServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SXServiceClient, *api.MbusMsg, *RequestVars), rv *RequestVars) error {
 
 	mb := &api.Mbus{
 		ClientId: uint64(clt.ClientID),
@@ -739,7 +739,7 @@ func (clt *SXServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SXServ
 		}
 		//		log.Printf("Receive Mbus Message %v", *mes)
 		// call Callback!
-		mbcb(clt, mes, data)
+		mbcb(clt, mes, rv)
 	}
 	return err
 }

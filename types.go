@@ -15,5 +15,5 @@ type RequestVars struct {
 	ProSpAdmin      map[string][]*api.Supply
 	ObjNames        []string
 	AreaName        string
-	Data            []byte //= make(chan []byte)
+	Data            *[]byte //= make(chan []byte)
 }
